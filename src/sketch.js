@@ -1,27 +1,40 @@
-let s = (sk) => {
+let s = (p5) => {
     let layers = [];
+    
+    const dim = (x, y) => [window.innerWidth * x, window.innerHeight * y];
+
+    const DIM = [960, 640];
+
+    const SAMPLES = 16;
+
+    const center = (dim) => [ 
+        window.innerWidth / 2 - dim[0] / 2, 
+        window.innerHeight / 2 - dim[1] / 2,
+        dim[0], dim[1]
+    ];
+
+    const canvas = () => {
+        p5.background(255);
+        p5.fill(20, 30, 40);
+        p5.rect(0, 0, DIM[0], DIM[1]);
+        p5.stroke(255);
+        p5.rect(0, DIM[1]/3.5, DIM[0], DIM[1] / 2.5);
+        p5.stroke(255);
+        for(let i = 0; i < SAMPLES; i++) {
+            p5.fill(200);
+            p5.rect(i  * (DIM[0]/SAMPLES) + 5, DIM[1] - 160, 40, 100);
+        }
+    }
 
     // sk.translate(window.innerWidth/2,window.innerHeight/2);
-    sk.setup = () =>{
-        let gfx = sk.createGraphics(window.innerWidth, window.innerHeight);
-        let gfx2;
+    p5.setup = () => {
+        p5.createCanvas(window.innerWidth,window.innerHeight);
+ 
+    }
 
-        sk.createCanvas(window.innerWidth,window.innerHeight);
-        sk.angleMode(sk.DEGREES);
-        sk.imageMode(sk.CENTER);
-        sk.translate(window.innerWidth/2,window.innerHeight/2);
-        sk.background(40);
-        gfx.stroke(200);
-        gfx.strokeWeight(3);
-        gfx.line(0,0,window.innerWidth,0);
-        for(let i=0;i<1000;i++){
-            gfx.point(Math.random()*window.innerWidth, Math.random()*window.innerHeight);
-        }
+    p5.draw = () => {
+        canvas();
 
-        gfx2 = {...gfx};
-        sk.image(gfx,0,0);
-        sk.rotate(1);
-        sk.image(gfx2,0,0);
     }
 
 }
