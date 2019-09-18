@@ -13,6 +13,7 @@ Thumbs.db
 # Application specific files
 venv
 node_modules
+dist
 .sass-cache
 
 # Sublime Text 3
