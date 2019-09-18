@@ -13,8 +13,8 @@ module.exports = {
         extensions: ['*', '.js']
   },
     output: {
-        filename: 'bundle.js',
-        path: '/'
+        path: __dirname + '/dist',
+        filename: 'bundle.js'
     },
     devServer: {
         contentBase: './dist'
