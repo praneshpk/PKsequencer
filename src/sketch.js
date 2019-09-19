@@ -15,11 +15,7 @@ let s = (p5) => {
 
     let step = 0;
 
-    const center = (dim) => [ 
-        window.innerWidth / 2 - dim[0] / 2, 
-        window.innerHeight / 2 - dim[1] / 2,
-        dim[0], dim[1]
-    ];
+    let contexts = [];
     
     let gutter = D[0]/SAMPLES/4 * 1.5;
 
@@ -31,12 +27,13 @@ let s = (p5) => {
     const sample = (on, sample, context) => {
         p5.noStroke();
         on ? p5.fill(199,185,110) : p5.fill(149,134,58);
-        p5.rect(context.x, context.y, context.w, context.h);
         if(on) {
             sample.amp(.2);
             sample.freq(context.x);
-        } else {
         }
+        p5.rect(context.x, context.y, context.w, context.h);
+        p5.fill(10);
+        context.clicked ? p5.circle(context.x + context.w / 2, context.y + 20, 6) : '';
     }
 
     const canvas = () => {
@@ -50,15 +47,16 @@ let s = (p5) => {
         if(Math.floor(p5.frameCount % (FPS*60/BPM/(SAMPLES))) === 0) {
             step = (step + 1) % SAMPLES;        
         }
-        for(let i = 0; i < SAMPLES; i++) {
-            let context = {
-                x: i * (s[0] + gutter) + gutter*1.25,
-                y: D[1] - s[1] * 1.5,
-                w: s[0],
-                h: s[1]
-            };
-            sample(i===step, bass, context);         
-        }
+        contexts.forEach((e, i) => sample(i===step, bass, e));
+    }
+
+    p5.mouseClicked = (e) => {
+        contexts.forEach((c) => {
+            if(e.x >= c.x && e.x <= c.x + c.w 
+                && e.y >= c.y && e.y <= c.y + c.h) {
+                c.clicked = !c.clicked;
+            }
+        });
     }
 
     // sk.translate(window.innerWidth/2,window.innerHeight/2);
@@ -68,7 +66,18 @@ let s = (p5) => {
         bass.setType('sine');
         bass.amp(0.5);
         bass.start();
- 
+
+        for(let i = 0; i < SAMPLES; i++) {
+            contexts.push({
+                x: i * (s[0] + gutter) + gutter*1.25,
+                y: D[1] - s[1] * 1.5,
+                w: s[0],
+                h: s[1],
+                clicked: false,
+            });
+        }
+        console.log(contexts);
+        
     }
 
     p5.draw = () => {
