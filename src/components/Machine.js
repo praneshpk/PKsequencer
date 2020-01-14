@@ -24,7 +24,8 @@ export default function Machine() {
       encoders: [],
     },
     muted: false,
-    paused: false
+    paused: false,
+    focused: 0
   };
 
   function sketch(p5) {
@@ -41,13 +42,24 @@ export default function Machine() {
       }
     }
     p5.keyPressed = () => {
-      switch (p5.keyCode) {
-        case p5.LEFT_ARROW:
-          console.log('left!');
-          break;
-        case p5.RIGHT_ARROW:
-          console.log('right!');
-          break;
+      if (p5.keyCode === p5.LEFT_ARROW || p5.keyCode === p5.RIGHT_ARROW) {
+        // create temp var
+        params.clickables.samples[params.focused].focused = false;
+        if (p5.keyCode === p5.LEFT_ARROW) {
+          if (params.focused === 0) {
+            params.focused = SAMPLES - 1;
+          } else {
+            params.focused--;
+          }
+        } else {
+          if (params.focused === SAMPLES - 1) {
+            params.focused = 0;
+          } else {
+            params.focused++;
+          }
+        }
+        params.clickables.samples[params.focused].focused = true;
+
       }
     }
     p5.setup = () => {
@@ -61,11 +73,12 @@ export default function Machine() {
         params.clickables.samples.push(
           new Sample(p5, {
             sample: new AudioUnit(bass, {}),
+            pattern: SAMPLES,
             x: i * (DIM.x / SAMPLES) + DIM.x / SAMPLES / 4,
             y: DIM.y - DIM.y * .25,
             w: DIM.x / SAMPLES / 2,
             h: DIM.y * .2,
-            selected: i === 0 ? true : false
+            focused: i === params.focused ? true : false
           })
         );
       }
