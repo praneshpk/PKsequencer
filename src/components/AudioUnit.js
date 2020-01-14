@@ -9,15 +9,15 @@ export default function AudioUnit(audio, { type = 'sine', a = 0, d = 200, s = 50
     type,
     playing: false,
     start() {
-      if (!this.playing) {
-        this.playing = true;
-        audio.setType(this.type);
-        audio.freq(this.freq);
-        audio.amp(0);
-        audio.start();
-        audio.amp(this.amp, this.a);
-        audio.stop(this.s);
-      }
+      //if (!this.playing) {
+      this.playing = true;
+      audio.setType(this.type);
+      audio.freq(this.freq);
+      audio.amp(0);
+      audio.start();
+      audio.amp(this.amp, this.a);
+      audio.stop(this.s);
+      //}
     },
     stop() {
       this.playing = false;

@@ -8,17 +8,20 @@ export default function Sample(p5, { sample, x, y, w, h, bgOn = [199, 185, 110],
     selected: false,
     on: false,
     pattern: Array(seqLen).fill(false),
-    render(step) {
+    temp: false,
+    render(step, i) {
       if (step) {
         p5.fill.apply(p5, this.selected ? bgSelectedOn : bgOn);
-        if (this.on) {
-          sample.start();
-        }
       } else {
-        sample.stop();
+        // sample.stop();
         p5.fill.apply(p5, this.selected ? bgSelectedOff : bgOff);
       }
       p5.rect(x, y, w, h);
+      if (this.pattern[i] && !this.on) {
+        sample.start();
+        this.on = true;
+      }
+
       if (this.focused) {
         p5.fill(100);
         p5.circle(x + w / 2, y + h + 15, 10, 10);
@@ -27,8 +30,8 @@ export default function Sample(p5, { sample, x, y, w, h, bgOn = [199, 185, 110],
     select() {
       if (p5.mouseX >= x && p5.mouseX <= x + w && p5.mouseY >= y && p5.mouseY <= y + h) {
         this.selected = !this.selected;
-        return this.selected;
       }
+      return this.selected;
     }
   };
 

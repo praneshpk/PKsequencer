@@ -8,12 +8,13 @@ import Button from './Button';
 
 /* eslint-disable no-undef */
 export default function Machine() {
-  const bass = new p5.Oscillator();
   //const metronome;
 
   const DIM = { x: 1050, y: 640 };
   const FPS = 60;
   const SAMPLES = 16;
+  const bass = Array(SAMPLES).fill(new p5.Oscillator());
+
 
   const params = {
     bpm: 120,
@@ -35,16 +36,22 @@ export default function Machine() {
       // kick = new p5.loadSound('/sounds/kick.wav');
     }
     p5.mousePressed = () => {
+      console.log(params.clickables.samples);
       for (const key in params.clickables) {
-        for (const click of params.clickables[key]) {
-          click.select();
-        }
+        params.clickables[key].forEach((e, i) => {
+          if (key === 'samples') {
+            params.clickables[key][params.focused].pattern[i] = e.select();
+          } else {
+            e.select();
+          }
+        });
       }
     }
     p5.keyPressed = () => {
       if (p5.keyCode === p5.LEFT_ARROW || p5.keyCode === p5.RIGHT_ARROW) {
         // create temp var
-        params.clickables.samples[params.focused].focused = false;
+        let samples = params.clickables.samples;
+        samples[params.focused].focused = false;
         if (p5.keyCode === p5.LEFT_ARROW) {
           if (params.focused === 0) {
             params.focused = SAMPLES - 1;
@@ -58,27 +65,25 @@ export default function Machine() {
             params.focused++;
           }
         }
-        params.clickables.samples[params.focused].focused = true;
-
+        samples[params.focused].focused = true;
+        samples[params.focused].pattern.forEach((e, i) => samples[i].selected = e);
       }
     }
     p5.setup = () => {
       p5.frameRate(FPS);
       p5.createCanvas(window.innerWidth, window.innerHeight);
-      bass.setType('sine');
-      bass.amp(0.5);
 
       // Create samples
       for (let i = 0; i < SAMPLES; i++) {
         params.clickables.samples.push(
           new Sample(p5, {
-            sample: new AudioUnit(bass, {}),
-            pattern: SAMPLES,
+            sample: new AudioUnit(bass[0], { freq: (i + 1) * 100 }),
+            seqLen: SAMPLES,
             x: i * (DIM.x / SAMPLES) + DIM.x / SAMPLES / 4,
             y: DIM.y - DIM.y * .25,
             w: DIM.x / SAMPLES / 2,
             h: DIM.y * .2,
-            focused: i === params.focused ? true : false
+            focused: i === params.focused ? true : false,
           })
         );
       }
@@ -88,7 +93,6 @@ export default function Machine() {
           params.paused = !params.paused;
         }, { x: 200, y: 200 })
       );
-      console.log(params.clickables.samples);
     }
     p5.draw = () => {
       canvas(p5);
@@ -101,11 +105,18 @@ export default function Machine() {
         if (params.step % 4 === 0) {
           // metronome click
         }
+        //console.log(params.step, params.clickables.samples[params.step]);
+        // params.clickables.samples[params.step].on = false;
+        params.clickables.samples.forEach((e, i) => {
+          e.on = false;
+        });
         params.step = (params.step + 1) % SAMPLES;
+
+
       }
 
       params.clickables.samples.forEach((e, i) => {
-        e.render(i === params.step);
+        e.render(i === params.step, params.step);
       });
       for (const button of params.clickables.buttons) {
         button.render();
