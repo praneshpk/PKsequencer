@@ -1,6 +1,9 @@
 import p5 from 'p5';
 import 'p5/lib/addons/p5.sound';
-export default function AudioUnit({ type = 'sine', a = 0, d = 200, s = 50, r = 1000, freq = 250, amp = .5 }) {
+
+export default function AudioUnit({
+  type = 'sine', a = 0, d = 200, s = 50, r = 1000, freq = 250, amp = 0.5,
+}) {
   return {
     osc: new p5.Oscillator(),
     env: new p5.Envelope(),
@@ -25,6 +28,6 @@ export default function AudioUnit({ type = 'sine', a = 0, d = 200, s = 50, r = 1
       this.osc.start();
       // audio.amp(this.amp, this.a);
       this.osc.stop(this.s);
-    }
-  }
+    },
+  };
 }

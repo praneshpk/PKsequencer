@@ -1,4 +1,6 @@
-export default function Button(p5, func, { x, y, label, selected = false }) {
+export default function Button(p5, func, {
+  x, y, label, selected = false,
+}) {
   const bgOn = [199, 185, 110];
   const bgOnSync = [255, 185, 110];
   const bgOff = [200];
@@ -6,13 +8,13 @@ export default function Button(p5, func, { x, y, label, selected = false }) {
   return {
     w: 50,
     h: 25,
-    selected: selected,
+    selected,
     exec: func,
     render(sync) {
       if (this.selected) {
-        p5.fill.apply(p5, sync ? bgOnSync : bgOn);
+        p5.fill(...sync ? bgOnSync : bgOn);
       } else {
-        p5.fill.apply(p5, bgOff);
+        p5.fill(...bgOff);
       }
       p5.rect(x, y, this.w, this.h);
       p5.noStroke();
@@ -30,6 +32,6 @@ export default function Button(p5, func, { x, y, label, selected = false }) {
         this.selected = !this.selected;
         this.exec();
       }
-    }
-  }
+    },
+  };
 }

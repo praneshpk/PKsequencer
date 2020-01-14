@@ -1,4 +1,6 @@
-export default function Sample(p5, { sample, x, y, w, h, bgOn = [199, 185, 110], focused, seqLen }) {
+export default function Sample(p5, {
+  sample, x, y, w, h, bgOn = [199, 185, 110], focused, seqLen,
+}) {
   const bgOff = [149, 134, 58];
   const bgSelectedOn = [0, 0, 0];
   const bgSelectedOff = [255, 255, 255];
@@ -12,9 +14,9 @@ export default function Sample(p5, { sample, x, y, w, h, bgOn = [199, 185, 110],
     render(step, i) {
       p5.noStroke();
       if (step) {
-        p5.fill.apply(p5, this.selected ? bgSelectedOn : bgOn);
+        p5.fill(...this.selected ? bgSelectedOn : bgOn);
       } else {
-        p5.fill.apply(p5, this.selected ? bgSelectedOff : bgOff);
+        p5.fill(...this.selected ? bgSelectedOff : bgOff);
       }
       p5.rect(x, y, w, h);
       if (this.pattern[i] && !this.on) {
@@ -32,7 +34,6 @@ export default function Sample(p5, { sample, x, y, w, h, bgOn = [199, 185, 110],
         this.selected = !this.selected;
       }
       return this.selected;
-    }
+    },
   };
-
 }
