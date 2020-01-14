@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import p5 from 'p5';
-import 'p5/lib/addons/p5.sound';
 
 import Sample from './Sample';
 import AudioUnit from './AudioUnit';
@@ -9,11 +8,9 @@ import Button from './Button';
 /* eslint-disable no-undef */
 export default function Machine() {
   //const metronome;
-
   const DIM = { x: 1050, y: 640 };
   const FPS = 60;
   const SAMPLES = 16;
-  const bass = Array(SAMPLES).fill(new p5.Oscillator());
 
 
   const params = {
@@ -26,17 +23,24 @@ export default function Machine() {
     },
     muted: false,
     paused: false,
+    metronome: false,
     focused: 0
+  };
+  const assets = {
+    'metronome': {
+      url: 'img/metronome.png',
+      sound: new AudioUnit({ freq: 1000, amp: .15 })
+    }
   };
 
   function sketch(p5) {
-    let kick;
     p5.preload = () => {
-      // p5.soundFormats('mp3', 'wav');
-      // kick = new p5.loadSound('/sounds/kick.wav');
+      // Preload image assets
+      for (const key in assets) {
+        assets[key].img = p5.loadImage(assets[key].url);
+      }
     }
     p5.mousePressed = () => {
-      console.log(params.clickables.samples);
       for (const key in params.clickables) {
         params.clickables[key].forEach((e, i) => {
           if (key === 'samples') {
@@ -77,7 +81,7 @@ export default function Machine() {
       for (let i = 0; i < SAMPLES; i++) {
         params.clickables.samples.push(
           new Sample(p5, {
-            sample: new AudioUnit(bass[0], { freq: (i + 1) * 100 }),
+            sample: new AudioUnit({ freq: (i + 1) * 100 }),
             seqLen: SAMPLES,
             x: i * (DIM.x / SAMPLES) + DIM.x / SAMPLES / 4,
             y: DIM.y - DIM.y * .25,
@@ -87,11 +91,24 @@ export default function Machine() {
           })
         );
       }
-      // Play / pause
       params.clickables.buttons.push(
         new Button(p5, () => {
-          params.paused = !params.paused;
-        }, { x: 200, y: 200 })
+          params.metronome = !params.metronome;
+        }, {
+          x: DIM.x / 2,
+          y: DIM.y - DIM.y * .35,
+          label: assets.metronome.img
+        })
+      )
+      let gutter = params.clickables.buttons[0].w + 10;
+      // Play / pause
+      params.clickables.buttons.push(
+        new Button(p5, () => params.paused = !params.paused, {
+          x: DIM.x / 2 + gutter,
+          y: DIM.y - DIM.y * .35,
+          label: '▶',
+          selected: true
+        })
       );
     }
     p5.draw = () => {
@@ -102,32 +119,33 @@ export default function Machine() {
 
 
       if (!params.paused && Math.floor(p5.frameCount % (FPS * 60 / params.bpm / 4)) === 0) {
-        if (params.step % 4 === 0) {
-          // metronome click
-        }
-        //console.log(params.step, params.clickables.samples[params.step]);
-        // params.clickables.samples[params.step].on = false;
+
         params.clickables.samples.forEach((e, i) => {
           e.on = false;
         });
         params.step = (params.step + 1) % SAMPLES;
-
-
+        if (params.step % 4 === 0 && params.metronome) {
+          assets.metronome.sound.start();
+        }
       }
 
       params.clickables.samples.forEach((e, i) => {
         e.render(i === params.step, params.step);
       });
-      for (const button of params.clickables.buttons) {
-        button.render();
-      }
+
+      // Make first button light up to the metronome (play / pause)
+      params.clickables.buttons.forEach((e, i) => {
+        e.render(i === 0 && params.step % 4 === 0);
+      });
     }
   }
 
   function canvas(p5) {
     p5.background(255);
     p5.fill(40, 40, 50);
+    p5.noStroke();
     p5.rect(0, 0, DIM.x, DIM.y);
+    p5.strokeWeight(1);
     p5.stroke(255);
     p5.line(0, DIM.y * .2, DIM.x, DIM.y * .2);
     p5.line(0, DIM.y * .7, DIM.x, DIM.y * .7);

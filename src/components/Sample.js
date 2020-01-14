@@ -10,10 +10,10 @@ export default function Sample(p5, { sample, x, y, w, h, bgOn = [199, 185, 110],
     pattern: Array(seqLen).fill(false),
     temp: false,
     render(step, i) {
+      p5.noStroke();
       if (step) {
         p5.fill.apply(p5, this.selected ? bgSelectedOn : bgOn);
       } else {
-        // sample.stop();
         p5.fill.apply(p5, this.selected ? bgSelectedOff : bgOff);
       }
       p5.rect(x, y, w, h);

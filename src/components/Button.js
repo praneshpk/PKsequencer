@@ -1,23 +1,32 @@
-export default function Button(p5, func, { x, y }) {
-  const r = 25;
-  const bgOn = [130];
-  const bgOff = [20];
-
-  this.selected = false;
+export default function Button(p5, func, { x, y, label, selected = false }) {
+  const bgOn = [199, 185, 110];
+  const bgOnSync = [255, 185, 110];
+  const bgOff = [200];
 
   return {
+    w: 50,
+    h: 25,
+    selected: selected,
     exec: func,
-    render() {
+    render(sync) {
       if (this.selected) {
-        p5.fill.apply(p5, bgOn);
+        p5.fill.apply(p5, sync ? bgOnSync : bgOn);
       } else {
         p5.fill.apply(p5, bgOff);
       }
-      p5.circle(x, y, r, r);
+      p5.rect(x, y, this.w, this.h);
+      p5.noStroke();
+      if (typeof label === 'string' || label instanceof String) {
+        p5.fill(255);
+        p5.text(label, x + this.w / 2.5, y - 5);
+      } else {
+        label.resize(12, 0);
+        // p5.smooth(4);
+        p5.image(label, x + this.w / 3, y - 25);
+      }
     },
     select() {
-      let d = p5.dist(p5.mouseX, p5.mouseY, x, y);
-      if (d < r / 2) {
+      if (p5.mouseX >= x && p5.mouseX <= x + this.w && p5.mouseY >= y && p5.mouseY <= y + this.h) {
         this.selected = !this.selected;
         this.exec();
       }
