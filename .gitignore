@@ -16,7 +16,7 @@ node_modules
 dist
 build
 .sass-cache
-.lock
+*.lock
 
 # Sublime Text 3
 *.sublime-project
