@@ -88,23 +88,15 @@ export default function Machine() {
       });
     };
     p5.mouseDragged = (event) => {
-      Object.keys(Clickables).forEach((key) => {
-        if (key === 'encoders') {
-          Clickables[key].forEach((e) => {
-            e.adjust(-event.movementY);
-          });
-        }
+      Clickables.encoders.forEach((e) => {
+        e.adjust(-event.movementY);
       });
     };
     p5.mouseWheel = (event) => {
-      Object.keys(Clickables).forEach((key) => {
-        if (key === 'encoders') {
-          Clickables[key].forEach((e) => {
-            e.select();
-            e.adjust(event.delta);
-            e.reset();
-          });
-        }
+      Clickables.encoders.forEach((e) => {
+        e.select();
+        e.adjust(event.delta);
+        e.reset();
       });
     };
     p5.mouseReleased = () => {
@@ -112,6 +104,17 @@ export default function Machine() {
         if (key === 'encoders') {
           Clickables[key].forEach((e) => {
             e.reset();
+          });
+        }
+        // For non-toggle buttons
+        if (key === 'buttons') {
+          Clickables[key].forEach((e) => {
+            if (e.inst) {
+              e.selected = false;
+              if (e.select()) {
+                e.exec();
+              }
+            }
           });
         }
       });
@@ -159,6 +162,8 @@ export default function Machine() {
           }),
         );
       }
+
+      /* Buttons */
       // Metronome
       Clickables.buttons.push(
         new Button(p5, () => {
@@ -172,29 +177,44 @@ export default function Machine() {
       // Play / pause
       Clickables.buttons.push(
         new Button(p5, () => { Params.paused = !Params.paused; }, {
-          x: DIM.x / 2 + Clickables.buttons[0].w + 10,
+          x: DIM.x / 2 + (Clickables.buttons[0].w + 10) * Clickables.buttons.length,
           y: DIM.y - DIM.y * 0.35,
           label: '▶',
           selected: true,
         }),
       );
+      // Record
       Clickables.buttons.push(
         new Button(p5, () => { Params.recording = !Params.recording; }, {
-          x: DIM.x / 2 + (Clickables.buttons[0].w + 10) * 2,
+          x: DIM.x / 2 + (Clickables.buttons[0].w + 10) * Clickables.buttons.length,
           y: DIM.y - DIM.y * 0.35,
           label: '●',
           bgOff: [255, 130, 130],
           bgOn: [255, 60, 0],
         }),
       );
-      // Clickables.buttons.push(
-      //   new Button(p5, () => { })
+      // Clear
+      const clear = new Button(p5, null, {
+        x: DIM.x / 2 + (Clickables.buttons[0].w + 10) * Clickables.buttons.length,
+        y: DIM.y - DIM.y * 0.35,
+        label: 'CLEAR PTN',
+        inst: true,
+      });
+      clear.exec = () => {
+        // TODO: Replace with custom dialog
+        if (window.confirm('Are you sure you would like to clear the current pattern? This action cannot be undone')) {
+          Clickables.samples.forEach((e) => { e.pattern.fill(false); });
+          focusSample(Params.focused);
+        }
+      };
+      Clickables.buttons.push(clear);
       // BPM
       const bpmEncoder = new Encoder(p5, null, {
         label: Params.bpm.tic,
         val: Params.bpm.tic / Params.bpm.max,
         x: DIM.x - 50,
         y: 50,
+        r: 50,
       });
       bpmEncoder.exec = (d) => {
         const oldBpm = Params.bpm.tic;

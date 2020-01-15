@@ -1,9 +1,10 @@
 export default function Button(p5, func, {
-  x, y, label, selected = false, bgOn = [199, 185, 110], bgOff = [200],
+  x, y, label, selected = false, bgOn = [199, 185, 110], bgOff = [200], inst = false,
 }) {
   const bgOnSync = [255, 185, 110];
 
   return {
+    inst,
     w: 50,
     h: 25,
     selected,
@@ -28,8 +29,12 @@ export default function Button(p5, func, {
     select() {
       if (p5.mouseX >= x && p5.mouseX <= x + this.w && p5.mouseY >= y && p5.mouseY <= y + this.h) {
         this.selected = !this.selected;
-        this.exec();
+        if (!this.inst) {
+          this.exec();
+        }
+        return true;
       }
+      return false;
     },
   };
 }
