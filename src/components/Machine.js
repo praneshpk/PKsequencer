@@ -12,28 +12,31 @@ export default function Machine() {
   const FPS = 60;
   const SAMPLES = 16;
 
-  const params = {
+  const Params = {
     bpm: {
       min: 20,
       tic: 120,
       max: 250,
     },
     step: 0,
-    clickables: {
-      samples: [],
-      buttons: [],
-      encoders: [],
-    },
     muted: false,
     paused: false,
+    recording: false,
     metronome: false,
     focused: 0,
   };
+  const Clickables = {
+    samples: [],
+    buttons: [],
+    encoders: [],
+  };
+
+  const qwerty = 'qwertyuiopasdfghjklzxcvbnm'.substring(0, SAMPLES);
 
   const assets = {
     metronome: {
       url: 'img/metronome.png',
-      sound: new AudioUnit({ freq: 1000, amp: 0.15 }),
+      sound: new AudioUnit({ freq: 2000, amp: 0.15 }),
     },
   };
   function canvas(p5) {
@@ -47,6 +50,20 @@ export default function Machine() {
     p5.line(0, DIM.y * 0.7, DIM.x, DIM.y * 0.7);
   }
 
+  function focusSample(i) {
+    // Remove focus from current sample
+    Clickables.samples[Params.focused].focused = false;
+
+    // Set focus sample to passed index
+    Params.focused = i;
+    Clickables.samples[Params.focused].focused = true;
+
+    // Set current pattern to machine
+    Clickables.samples[Params.focused].pattern.forEach((e, i) => {
+      Clickables.samples[i].selected = e;
+    });
+  }
+
   function sketch(p5) {
     p5.preload = () => {
       // Preload image assets
@@ -55,52 +72,68 @@ export default function Machine() {
       });
     };
     p5.mousePressed = () => {
-      Object.keys(params.clickables).forEach((key) => {
-        params.clickables[key].forEach((e, i) => {
+      Object.keys(Clickables).forEach((key) => {
+        Clickables[key].forEach((e, i) => {
           if (key === 'samples') {
-            params.clickables[key][params.focused].pattern[i] = e.select();
+            Clickables[key][Params.focused].pattern[i] = e.select();
           } else {
             e.select();
           }
         });
       });
     };
-    p5.mouseDragged = () => {
-      Object.keys(params.clickables).forEach((key) => {
+    p5.mouseDragged = (event) => {
+      Object.keys(Clickables).forEach((key) => {
         if (key === 'encoders') {
-          params.clickables[key].forEach((e) => {
-            e.adjust();
+          Clickables[key].forEach((e) => {
+            e.adjust(-event.movementY);
+          });
+        }
+      });
+    };
+    p5.mouseWheel = (event) => {
+      Object.keys(Clickables).forEach((key) => {
+        if (key === 'encoders') {
+          Clickables[key].forEach((e) => {
+            e.select();
+            e.adjust(event.delta);
+            e.reset();
           });
         }
       });
     };
     p5.mouseReleased = () => {
-      Object.keys(params.clickables).forEach((key) => {
+      Object.keys(Clickables).forEach((key) => {
         if (key === 'encoders') {
-          params.clickables[key].forEach((e) => {
+          Clickables[key].forEach((e) => {
             e.reset();
           });
         }
       });
     };
     p5.keyPressed = () => {
-      if (p5.keyCode === p5.LEFT_ARROW || p5.keyCode === p5.RIGHT_ARROW) {
-        // create temp var
-        const { samples } = params.clickables;
-        samples[params.focused].focused = false;
-        if (p5.keyCode === p5.LEFT_ARROW) {
-          if (params.focused === 0) {
-            params.focused = SAMPLES - 1;
-          } else {
-            params.focused--;
+      if (p5.keyCode === p5.LEFT_ARROW) {
+        focusSample(Params.focused > 0 ? Params.focused - 1 : SAMPLES - 1);
+      } else if (p5.keyCode === p5.RIGHT_ARROW) {
+        focusSample(Params.focused < SAMPLES - 1 ? Params.focused + 1 : 0);
+      } else {
+        [...qwerty].forEach((ch, i) => {
+          if (String.fromCharCode(p5.keyCode) === ch.toUpperCase()) {
+            // Shortcut to select sample with SHIFT +
+            if (p5.keyIsDown(16)) {
+              focusSample(i);
+            } else {
+              Clickables.samples[i].sample.start();
+              Clickables.samples[i].sample.playing = false;
+              if (Params.recording) {
+                Clickables.samples[i].pattern[Params.step] = true;
+                if (i === Params.focused) {
+                  focusSample(i);
+                }
+              }
+            }
           }
-        } else if (params.focused === SAMPLES - 1) {
-          params.focused = 0;
-        } else {
-          params.focused++;
-        }
-        samples[params.focused].focused = true;
-        samples[params.focused].pattern.forEach((e, i) => { samples[i].selected = e; });
+        });
       }
     };
     p5.setup = () => {
@@ -109,7 +142,7 @@ export default function Machine() {
 
       // Create samples
       for (let i = 0; i < SAMPLES; i++) {
-        params.clickables.samples.push(
+        Clickables.samples.push(
           new Sample(p5, {
             sample: new AudioUnit({ freq: (i + 1) * 100 }),
             seqLen: SAMPLES,
@@ -117,70 +150,82 @@ export default function Machine() {
             y: DIM.y - DIM.y * 0.25,
             w: DIM.x / SAMPLES / 2,
             h: DIM.y * 0.2,
-            focused: i === params.focused,
+            focused: i === Params.focused,
           }),
         );
       }
       // Metronome
-      params.clickables.buttons.push(
+      Clickables.buttons.push(
         new Button(p5, () => {
-          params.metronome = !params.metronome;
+          Params.metronome = !Params.metronome;
         }, {
           x: DIM.x / 2,
           y: DIM.y - DIM.y * 0.35,
           label: assets.metronome.img,
         }),
       );
-      const gutter = params.clickables.buttons[0].w + 10;
       // Play / pause
-      params.clickables.buttons.push(
-        new Button(p5, () => { params.paused = !params.paused; }, {
-          x: DIM.x / 2 + gutter,
+      Clickables.buttons.push(
+        new Button(p5, () => { Params.paused = !Params.paused; }, {
+          x: DIM.x / 2 + Clickables.buttons[0].w + 10,
           y: DIM.y - DIM.y * 0.35,
           label: '▶',
           selected: true,
         }),
       );
+      Clickables.buttons.push(
+        new Button(p5, () => { Params.recording = !Params.recording; }, {
+          x: DIM.x / 2 + (Clickables.buttons[0].w + 10) * 2,
+          y: DIM.y - DIM.y * .35,
+          label: '●',
+          bgOff: [255, 130, 130],
+          bgOn: [255, 60, 0],
+        })
+      );
+      // Clickables.buttons.push(
+      //   new Button(p5, () => { })
       // BPM
       const bpmEncoder = new Encoder(p5, null, {
-        label: params.bpm.tic,
-        val: params.bpm.tic / params.bpm.max,
+        label: Params.bpm.tic,
+        val: Params.bpm.tic / Params.bpm.max,
+        x: DIM.x - 50,
+        y: 50,
       });
       bpmEncoder.exec = (d) => {
-        const oldBpm = params.bpm.tic;
-        params.bpm.tic = Math.max(
-          Math.min(params.bpm.max, params.bpm.tic + d * 0.5),
-          params.bpm.min,
+        const oldBpm = Params.bpm.tic;
+        Params.bpm.tic = Math.max(
+          Math.min(Params.bpm.max, Params.bpm.tic + d),
+          Params.bpm.min,
         );
-        bpmEncoder.val += (params.bpm.tic - oldBpm) / params.bpm.max;
-        bpmEncoder.label = params.bpm.tic;
+        bpmEncoder.val += (Params.bpm.tic - oldBpm) / Params.bpm.max;
+        bpmEncoder.label = Params.bpm.tic;
       };
-      params.clickables.encoders.push(bpmEncoder);
+      Clickables.encoders.push(bpmEncoder);
     };
     p5.draw = () => {
       canvas(p5);
 
-      if (!params.paused
-        && Math.floor(p5.frameCount % (FPS / (1 / 60) / params.bpm.tic / 4)) === 0) {
-        params.clickables.samples.forEach((e) => {
+      if (!Params.paused
+        && Math.floor(p5.frameCount % (FPS / (1 / 60) / Params.bpm.tic / 4)) === 0) {
+        Clickables.samples.forEach((e) => {
           e.on = false;
         });
-        params.step = (params.step + 1) % SAMPLES;
-        if (params.step % 4 === 0 && params.metronome) {
+        Params.step = (Params.step + 1) % SAMPLES;
+        if (Params.step % 4 === 0 && Params.metronome) {
           assets.metronome.sound.start();
         }
       }
 
-      params.clickables.samples.forEach((e, i) => {
-        e.render(i === params.step, params.step);
+      Clickables.samples.forEach((e, i) => {
+        e.render(i === Params.step, Params.step);
       });
 
       // Make first button light up to the metronome (play / pause)
-      params.clickables.buttons.forEach((e, i) => {
-        e.render(i === 0 && params.step % 4 === 0);
+      Clickables.buttons.forEach((e, i) => {
+        e.render(i === 0 && Params.step % 4 === 0);
       });
 
-      params.clickables.encoders.forEach((e) => {
+      Clickables.encoders.forEach((e) => {
         e.render();
       });
     };

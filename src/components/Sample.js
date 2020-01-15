@@ -7,6 +7,7 @@ export default function Sample(p5, {
 
   return {
     focused,
+    sample,
     selected: false,
     on: false,
     pattern: Array(seqLen).fill(false),
@@ -20,7 +21,7 @@ export default function Sample(p5, {
       }
       p5.rect(x, y, w, h);
       if (this.pattern[i] && !this.on) {
-        sample.start();
+        this.sample.start();
         this.on = true;
       }
 

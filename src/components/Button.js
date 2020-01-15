@@ -1,9 +1,7 @@
 export default function Button(p5, func, {
-  x, y, label, selected = false,
+  x, y, label, selected = false, bgOn = [199, 185, 110], bgOff = [200]
 }) {
-  const bgOn = [199, 185, 110];
   const bgOnSync = [255, 185, 110];
-  const bgOff = [200];
 
   return {
     w: 50,
@@ -20,10 +18,10 @@ export default function Button(p5, func, {
       p5.noStroke();
       if (typeof label === 'string' || label instanceof String) {
         p5.fill(255);
-        p5.text(label, x + this.w / 2.5, y - 5);
+        p5.textAlign(p5.CENTER);
+        p5.text(label, x + this.w / 2, y - 5);
       } else {
         label.resize(12, 0);
-        // p5.smooth(4);
         p5.image(label, x + this.w / 3, y - 25);
       }
     },
