@@ -176,11 +176,11 @@ export default function Machine() {
       Clickables.buttons.push(
         new Button(p5, () => { Params.recording = !Params.recording; }, {
           x: DIM.x / 2 + (Clickables.buttons[0].w + 10) * 2,
-          y: DIM.y - DIM.y * .35,
+          y: DIM.y - DIM.y * 0.35,
           label: '●',
           bgOff: [255, 130, 130],
           bgOn: [255, 60, 0],
-        })
+        }),
       );
       // Clickables.buttons.push(
       //   new Button(p5, () => { })

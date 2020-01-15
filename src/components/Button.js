@@ -1,5 +1,5 @@
 export default function Button(p5, func, {
-  x, y, label, selected = false, bgOn = [199, 185, 110], bgOff = [200]
+  x, y, label, selected = false, bgOn = [199, 185, 110], bgOff = [200],
 }) {
   const bgOnSync = [255, 185, 110];
 
