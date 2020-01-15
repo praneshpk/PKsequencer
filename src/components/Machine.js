@@ -8,7 +8,7 @@ import Button from './Button';
 import Encoder from './Encoder';
 
 export default function Machine() {
-  const DIM = { x: 1050, y: 640 };
+  const DIM = { x: window.innerWidth, y: window.innerHeight };
   const FPS = 60;
   const SAMPLES = 16;
 
@@ -30,6 +30,11 @@ export default function Machine() {
     buttons: [],
     encoders: [],
   };
+
+  window.addEventListener('resize', () => {
+    DIM.x = window.innerWidth;
+    DIM.y = window.innerHeight;
+  });
 
   const qwerty = 'qwertyuiopasdfghjklzxcvbnm'.substring(0, SAMPLES);
 
@@ -147,7 +152,7 @@ export default function Machine() {
             sample: new AudioUnit({ freq: (i + 1) * 100 }),
             seqLen: SAMPLES,
             x: i * (DIM.x / SAMPLES) + DIM.x / SAMPLES / 4,
-            y: DIM.y - DIM.y * 0.25,
+            y: DIM.y * 0.75,
             w: DIM.x / SAMPLES / 2,
             h: DIM.y * 0.2,
             focused: i === Params.focused,
