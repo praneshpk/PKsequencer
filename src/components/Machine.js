@@ -13,6 +13,7 @@ export default function Machine() {
   const SAMPLES = 16;
 
   const Params = {
+    voices: 16,
     bpm: {
       min: 20,
       tic: 120,
@@ -67,6 +68,13 @@ export default function Machine() {
     Clickables.samples[Params.focused].pattern.forEach((e, i) => {
       Clickables.samples[i].selected = e;
     });
+
+    // Set encoders to correct settings
+    Clickables.encoders.forEach((e, i) => {
+      if (i !== assets.metronome.enc) {
+        e.val = Clickables.samples[Params.focused].sample[e.label.toLowerCase()];
+      }
+    });
   }
 
   function sketch(p5) {
@@ -80,7 +88,9 @@ export default function Machine() {
       Object.keys(Clickables).forEach((key) => {
         Clickables[key].forEach((e, i) => {
           if (key === 'samples') {
-            Clickables[key][Params.focused].pattern[i] = e.select();
+            const inRegion = e.select();
+            Clickables[key][Params.focused].pattern[i] = e.selected;
+            e.isClicked = inRegion;
           } else {
             e.select();
           }
@@ -91,6 +101,9 @@ export default function Machine() {
       Clickables.encoders.forEach((e) => {
         e.adjust(-event.movementY);
       });
+      Clickables.samples.forEach((e, i) => {
+        Clickables.samples[Params.focused].pattern[i] = e.drag();
+      });
     };
     p5.mouseWheel = (event) => {
       Clickables.encoders.forEach((e) => {
@@ -100,23 +113,20 @@ export default function Machine() {
       });
     };
     p5.mouseReleased = () => {
-      Object.keys(Clickables).forEach((key) => {
-        if (key === 'encoders') {
-          Clickables[key].forEach((e) => {
-            e.reset();
-          });
+      Clickables.encoders.forEach((e) => {
+        e.reset();
+      });
+      // for non-toggle buttons
+      Clickables.buttons.forEach((e) => {
+        if (e.inst) {
+          if (e.select()) {
+            e.exec();
+          }
+          e.selected = false;
         }
-        // For non-toggle buttons
-        if (key === 'buttons') {
-          Clickables[key].forEach((e) => {
-            if (e.inst) {
-              e.selected = false;
-              if (e.select()) {
-                e.exec();
-              }
-            }
-          });
-        }
+      });
+      Clickables.samples.forEach((e) => {
+        e.isClicked = false;
       });
     };
     p5.keyPressed = () => {
@@ -148,11 +158,16 @@ export default function Machine() {
       p5.frameRate(FPS);
       p5.createCanvas(window.innerWidth, window.innerHeight);
 
+      let AU;
+      if (Params.voices < SAMPLES) {
+        AU = Array(Params.voices).fill(new AudioUnit({ freq: 100 }));
+      }
       // Create samples
       for (let i = 0; i < SAMPLES; i++) {
         Clickables.samples.push(
           new Sample(p5, {
-            sample: new AudioUnit({ freq: (i + 1) * 100 }),
+            sample: Params.voices < SAMPLES
+              ? AU[i % Params.voices] : new AudioUnit({ freq: (i + 1) * 100 }),
             seqLen: SAMPLES,
             x: i * (DIM.x / SAMPLES) + DIM.x / SAMPLES / 4,
             y: DIM.y * 0.75,
@@ -164,68 +179,129 @@ export default function Machine() {
       }
 
       /* Buttons */
+      // Button style preset
+      function buttonPreset(w = Clickables.buttons[0].w,
+        start = [DIM.x * 0.25, DIM.y - DIM.y * 0.35]) {
+        return {
+          x: start[0] + (w + 10) * Clickables.buttons.length,
+          y: start[1],
+          wF: DIM.x * 0.0015,
+          hF: DIM.y * 0.0012,
+        };
+      }
+
+      // Left sample
+      Clickables.buttons.push(
+        new Button(p5, () => {
+          focusSample(Params.focused > 0 ? Params.focused - 1 : SAMPLES - 1);
+        }, {
+          ...buttonPreset(0),
+          label: '<',
+          inst: true,
+          bgOn: [100],
+        }),
+      );
+      // Right sample
+      Clickables.buttons.push(
+        new Button(p5, () => {
+          focusSample(Params.focused < SAMPLES - 1 ? Params.focused + 1 : 0);
+        }, {
+          ...buttonPreset(),
+          label: '>',
+          inst: true,
+          bgOn: [100],
+        }),
+      );
+
       // Metronome
       Clickables.buttons.push(
         new Button(p5, () => {
           Params.metronome = !Params.metronome;
         }, {
-          x: DIM.x / 2,
-          y: DIM.y - DIM.y * 0.35,
+          ...buttonPreset(),
           label: assets.metronome.img,
         }),
       );
+      assets.metronome.btn = Clickables.buttons.length - 1;
+
       // Play / pause
       Clickables.buttons.push(
         new Button(p5, () => { Params.paused = !Params.paused; }, {
-          x: DIM.x / 2 + (Clickables.buttons[0].w + 10) * Clickables.buttons.length,
-          y: DIM.y - DIM.y * 0.35,
+          ...buttonPreset(),
           label: '▶',
           selected: true,
         }),
       );
+
       // Record
       Clickables.buttons.push(
         new Button(p5, () => { Params.recording = !Params.recording; }, {
-          x: DIM.x / 2 + (Clickables.buttons[0].w + 10) * Clickables.buttons.length,
-          y: DIM.y - DIM.y * 0.35,
+          ...buttonPreset(),
           label: '●',
           bgOff: [255, 130, 130],
           bgOn: [255, 60, 0],
         }),
       );
-      // Clear
-      const clear = new Button(p5, null, {
-        x: DIM.x / 2 + (Clickables.buttons[0].w + 10) * Clickables.buttons.length,
-        y: DIM.y - DIM.y * 0.35,
-        label: 'CLEAR PTN',
-        inst: true,
-      });
-      clear.exec = () => {
-        // TODO: Replace with custom dialog
-        if (window.confirm('Are you sure you would like to clear the current pattern? This action cannot be undone')) {
-          Clickables.samples.forEach((e) => { e.pattern.fill(false); });
+      // Clear part
+      Clickables.buttons.push(
+        new Button(p5, () => {
+          Clickables.samples[Params.focused].pattern.fill(false);
           focusSample(Params.focused);
-        }
-      };
-      Clickables.buttons.push(clear);
+        }, {
+          ...buttonPreset(),
+          label: 'CLEAR PTN',
+          inst: true,
+          bgOn: [100, 100, 200],
+        }),
+      );
+      // Clear pattern
+      Clickables.buttons.push(
+        new Button(p5, () => {
+          // TODO: Replace with custom dialog
+          if (window.confirm('Are you sure you would like to clear the current pattern? This action cannot be undone')) {
+            Clickables.samples.forEach((e) => { e.pattern.fill(false); });
+            focusSample(Params.focused);
+          }
+        }, {
+          ...buttonPreset(),
+          label: 'CLEAR SEQ',
+          inst: true,
+          bgOn: [200, 100, 200],
+        }),
+      );
+
+      /* Encoders */
       // BPM
       const bpmEncoder = new Encoder(p5, null, {
         label: Params.bpm.tic,
-        val: Params.bpm.tic / Params.bpm.max,
         x: DIM.x - 50,
         y: 50,
         r: 50,
+        min: Params.bpm.min,
+        max: Params.bpm.max,
+        val: Params.bpm.tic,
       });
-      bpmEncoder.exec = (d) => {
-        const oldBpm = Params.bpm.tic;
-        Params.bpm.tic = Math.max(
-          Math.min(Params.bpm.max, Params.bpm.tic + d),
-          Params.bpm.min,
-        );
-        bpmEncoder.val += (Params.bpm.tic - oldBpm) / Params.bpm.max;
+      bpmEncoder.exec = (val) => {
+        Params.bpm.tic = val;
         bpmEncoder.label = Params.bpm.tic;
       };
+      assets.metronome.enc = Clickables.encoders.length;
       Clickables.encoders.push(bpmEncoder);
+
+      // Frequency
+      Clickables.encoders.push(
+        new Encoder(p5, (val) => {
+          Clickables.samples[Params.focused].sample.freq = val;
+          console.log(`Frequency on Sample ${Params.focused}: ${val}`);
+        }, {
+          label: 'FREQ',
+          x: 100,
+          y: DIM.y * 0.25,
+          min: 100,
+          max: 1400,
+          val: 100,
+        }),
+      );
     };
     p5.draw = () => {
       canvas(p5);
@@ -245,9 +321,9 @@ export default function Machine() {
         e.render(i === Params.step, Params.step);
       });
 
-      // Make first button light up to the metronome (play / pause)
+      // Make metronome button light up to the beat (play / pause)
       Clickables.buttons.forEach((e, i) => {
-        e.render(i === 0 && Params.step % 4 === 0);
+        e.render(i === assets.metronome.btn && Params.step % 4 === 0);
       });
 
       Clickables.encoders.forEach((e) => {

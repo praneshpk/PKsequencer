@@ -8,6 +8,8 @@ export default function Sample(p5, {
   return {
     focused,
     sample,
+    isDragged: false,
+    isClicked: false,
     selected: false,
     on: false,
     pattern: Array(seqLen).fill(false),
@@ -33,6 +35,19 @@ export default function Sample(p5, {
     select() {
       if (p5.mouseX >= x && p5.mouseX <= x + w && p5.mouseY >= y && p5.mouseY <= y + h) {
         this.selected = !this.selected;
+        return true;
+      }
+      return false;
+    },
+    drag() {
+      if (!this.isClicked) {
+        if (p5.mouseX >= x && p5.mouseX <= x + w && p5.mouseY >= y && p5.mouseY <= y + h) {
+          // this.selected = !this.selected;
+          this.isDragged = true;
+        } else if (this.isDragged) {
+          this.selected = !this.selected;
+          this.isDragged = false;
+        }
       }
       return this.selected;
     },
