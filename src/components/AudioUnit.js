@@ -15,6 +15,7 @@ export default function AudioUnit({
     amp,
     type,
     playing: false,
+
     start() {
       this.playing = true;
 

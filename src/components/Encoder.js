@@ -1,5 +1,5 @@
 export default function Encoder(p5, func, {
-  x, y, r = 40, label = '', val = 0, min, max,
+  x, y, r = 50, label = '', val = 0, min, max,
 }) {
   return {
     r,
@@ -11,7 +11,9 @@ export default function Encoder(p5, func, {
     label,
     exec: func,
     render() {
-      p5.arc(x, y, r, r, p5.PI, p5.PI + (p5.TWO_PI * (this.val / this.max)));
+      if (this.val > 0) {
+        p5.arc(x, y, r, r, p5.PI, p5.PI + (p5.TWO_PI * (this.val / this.max)));
+      }
       p5.stroke(255);
       p5.noFill();
       p5.circle(x, y, r);

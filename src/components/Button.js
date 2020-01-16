@@ -18,6 +18,7 @@ export default function Button(p5, func, {
       } else {
         p5.fill(...bgOff);
       }
+      p5.noStroke();
       p5.rect(x, y, this.w, this.h);
       p5.noStroke();
       if (typeof label === 'string' || label instanceof String) {
