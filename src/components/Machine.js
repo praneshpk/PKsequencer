@@ -271,6 +271,7 @@ export default function Machine() {
       );
 
       /* Encoders */
+
       // BPM
       const bpmEncoder = new Encoder(p5, null, {
         label: Params.bpm.tic,
@@ -285,6 +286,7 @@ export default function Machine() {
         Params.bpm.tic = val;
         bpmEncoder.label = Params.bpm.tic;
       };
+      // Makes sure metronome does not change on bank change
       assets.metronome.enc = Clickables.encoders.length;
       Clickables.encoders.push(bpmEncoder);
 
@@ -302,6 +304,21 @@ export default function Machine() {
           val: 100,
         }),
       );
+      // Attack
+      Clickables.encoders.push(
+        new Encoder(p5, (val) => {
+          Clickables.samples[Params.focused].sample.attack = val;
+          console.log(`Attack on Sample ${Params.focused}: ${val}`);
+        }, {
+          label: 'ATTACK',
+          x: 150,
+          y: DIM.y * 0.25,
+          min: 0,
+          max: 200,
+          val: 0,
+        }),
+      );
+
     };
     p5.draw = () => {
       canvas(p5);
