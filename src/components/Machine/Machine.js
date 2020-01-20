@@ -1,4 +1,5 @@
 import React from 'react';
+import './Machine.scss';
 
 export default function Machine() {
   return (
