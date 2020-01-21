@@ -1,0 +1,17 @@
+.Sample {
+  position: relative;
+  height: 150px;
+  margin: 1rem;
+  flex: 1 100px;
+  cursor: pointer;
+  background: rgb(149, 134, 58);
+
+  &.on::after {
+    content: '\2022';
+    color: rgb(100, 100, 100);
+    font-size: 36px;
+    position: absolute;
+    bottom: -3rem; left: 0; right: 0;
+  }
+
+}
