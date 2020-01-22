@@ -1,18 +1,20 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './Sample.scss';
 
 export default function Sample({
-  osc, on, selected = false, id,
+  osc, on = false, focused = false, selected = false, press,
 }) {
-  const labelId = `sample-${id}`;
   return (
-    <div className={`Sample ${selected ? 'on' : ''}`}>
+    <button
+      className={`Sample${focused ? ' focused' : ''}${on ? ' on' : ''}${selected ? ' selected' : ''}`}
+      onClick={press}
+    >
       {/* <input
         type="radio"
         name="sample"
         id={labelId}
       /> */}
       {/* <label htmlFor={labelId} /> */}
-    </div>
+    </button>
   );
 }

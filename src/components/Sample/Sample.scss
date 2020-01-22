@@ -1,17 +1,33 @@
 .Sample {
   position: relative;
+  border: 0;
   height: 150px;
   margin: 1rem;
   flex: 1 100px;
   cursor: pointer;
   background: rgb(149, 134, 58);
+  outline: none;
+  &:active {
+    background: rgb(149, 144, 98);
+  }
 
-  &.on::after {
+  &.focused::after {
     content: '\2022';
     color: rgb(100, 100, 100);
     font-size: 36px;
     position: absolute;
     bottom: -3rem; left: 0; right: 0;
+  }
+
+  &.on {
+    background: rgb(199, 185, 110);
+    
+  }
+  &.selected {
+    background: rgb(200, 200, 200);
+  }
+  &.on.selected {
+    background: rgb(70, 0, 0);
   }
 
 }
