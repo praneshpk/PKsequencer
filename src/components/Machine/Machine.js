@@ -1,20 +1,30 @@
 import React, {
   useLayoutEffect, useState, useRef, useEffect,
 } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+
+
 import Sample from '../Sample/Sample';
 import './Machine.scss';
+import {
+  toggleSample, dragSample, setPattern, setBpm,
+} from '../../actions';
 
 export default function Machine() {
   const SAMPLES = 16;
   const VOICES = SAMPLES;
-  const [bpm, setBpm] = useState(120);
+
+  const dispatch = useDispatch();
+  const pattern = useSelector((state) => state.global.pattern);
+  const bpm = useSelector((state) => state.global.bpm);
+  const drag = useRef(Array(SAMPLES).fill(false));
+
 
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
   const voices = Array(VOICES).fill(audioContext.createOscillator());
   const [beat, setBeat] = useState(0);
   const focused = useRef(0);
-  const [patterns, setPatterns] = useState(Array(SAMPLES).fill(0).map(() => Array(SAMPLES).fill(false)));
 
   // Creates list of sample components
   function renderSamples(on) {
@@ -23,9 +33,21 @@ export default function Machine() {
       ret.push(Sample({
         focused: focused.current === i,
         press: () => {
-          patterns[focused.current][i] = !patterns[focused.current][i];
+          dispatch(toggleSample(focused.current, i));
         },
-        selected: patterns[focused.current][i],
+        dragStart: (evt) => {
+          evt.preventDefault();
+          if (!drag.current[i]) {
+            drag.current[i] = true;
+            dispatch(toggleSample(focused.current, i));
+          }
+        },
+        dragEnd: (evt) => {
+          evt.preventDefault();
+          drag.current = drag.current.map(() => false);
+          console.log('drop');
+        },
+        selected: pattern[focused.current][i],
         osc: voices[i % VOICES],
         on: on === i,
       }));
@@ -42,7 +64,6 @@ export default function Machine() {
   function step(now) {
     if (now - last.current >= (1000 / (bpm / 60)) / 4) {
       last.current = now;
-      // beat.current = (beat.current + 1) % SAMPLES;
       setBeat((prev) => (prev + 1) % SAMPLES);
       setSamples(renderSamples(beat));
     }
@@ -50,6 +71,8 @@ export default function Machine() {
   }
 
   useEffect(() => {
+    dispatch(setPattern(Array(SAMPLES).fill(0).map(() => Array(SAMPLES).fill(false))));
+    dispatch(setBpm(120));
     document.onkeydown = (e) => {
       if (e.key === 'ArrowLeft') {
         if (focused.current > 0) {
@@ -67,7 +90,7 @@ export default function Machine() {
       }
       console.log(e.key);
     };
-  }, []);
+  }, [dispatch]);
 
   useLayoutEffect(() => {
     requestRef.current = window.requestAnimationFrame(step);
@@ -80,7 +103,7 @@ export default function Machine() {
         {samples}
       </div>
       <div>{beat}</div>
-
+      <div>{bpm}</div>
     </div>
   );
 }
