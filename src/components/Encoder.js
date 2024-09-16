@@ -1,6 +1,8 @@
-export default function Encoder(p5, func, {
-  x, y, r = 50, label = '', val = 0, min, max,
-}) {
+export default function Encoder(
+  ctx,
+  func,
+  { x, y, r = 50, label = "", val = 0, min, max }
+) {
   return {
     r,
     selected: false,
@@ -12,29 +14,32 @@ export default function Encoder(p5, func, {
     exec: func,
     render() {
       if (this.val > 0) {
-        p5.arc(x, y, r, r, p5.PI, p5.PI + (p5.TWO_PI * (this.val / this.max)));
+        ctx.beginPath();
+        ctx.arc(x, y, r, Math.PI, Math.PI + 2 * Math.PI * (val / max));
+        ctx.strokeStyle = "white"; // Equivalent to stroke(255)
+        ctx.stroke();
       }
-      p5.stroke(255);
-      p5.noFill();
-      p5.circle(x, y, r);
-      p5.noStroke();
-      p5.fill(255);
-      p5.textAlign(p5.CENTER, p5.TOP);
-      p5.text(this.label, x - 2, y + r * 0.75);
+      // Drawing the circle
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, 2 * Math.PI);
+      ctx.stroke();
+
+      // Drawing the label
+      ctx.fillStyle = "white"; // Equivalent to fill(255)
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top"; // Equivalent to textAlign(CENTER, TOP)
+      ctx.fillText(label, x, y + r * 0.75);
     },
     select() {
-      const d = p5.dist(p5.mouseX, p5.mouseY, x, y);
+      const d = ctx.dist(ctx.mouseX, ctx.mouseY, x, y);
       if (d < r / 2) {
-        this.pos = { x: p5.mouseX, y: p5.mouseY };
+        this.pos = { x: ctx.mouseX, y: ctx.mouseY };
         this.selected = true;
       }
     },
     adjust(dy) {
       if (this.selected) {
-        this.val = Math.max(
-          Math.min(this.max, this.val + dy),
-          this.min,
-        );
+        this.val = Math.max(Math.min(this.max, this.val + dy), this.min);
         this.exec(this.val);
       }
     },

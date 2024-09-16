@@ -2,7 +2,7 @@ import Sample from './Sample';
 import Button from './Button';
 import Encoder from './Encoder';
 
-export default function initMachine(p5, {
+export default function initMachine(ctx, {
   Clickables, Assets, Params, focusSample, DIM, SAMPLES,
 }) {
   // eslint-disable-next-line global-require
@@ -16,7 +16,7 @@ export default function initMachine(p5, {
   // Create samples
   for (let i = 0; i < SAMPLES; i++) {
     Clickables.samples.push(
-      new Sample(p5, {
+      new Sample(ctx, {
         sample: AU ? AU[i % Params.voices] : new AudioUnit({ freq: (i + 1) * 100 }),
         seqLen: SAMPLES,
         x: i * (DIM.x / SAMPLES) + DIM.x / SAMPLES / 4,
@@ -42,7 +42,7 @@ export default function initMachine(p5, {
 
   // Left sample
   Clickables.buttons.push(
-    new Button(p5, () => {
+    new Button(ctx, () => {
       focusSample(Params.focused > 0 ? Params.focused - 1 : SAMPLES - 1);
     }, {
       ...buttonPreset(0),
@@ -53,7 +53,7 @@ export default function initMachine(p5, {
   );
   // Right sample
   Clickables.buttons.push(
-    new Button(p5, () => {
+    new Button(ctx, () => {
       focusSample(Params.focused < SAMPLES - 1 ? Params.focused + 1 : 0);
     }, {
       ...buttonPreset(),
@@ -65,7 +65,7 @@ export default function initMachine(p5, {
 
   // Metronome
   Clickables.buttons.push(
-    new Button(p5, () => {
+    new Button(ctx, () => {
       Params.metronome = !Params.metronome;
     }, {
       ...buttonPreset(),
@@ -76,7 +76,7 @@ export default function initMachine(p5, {
 
   // Play / pause
   Clickables.buttons.push(
-    new Button(p5, () => { Params.paused = !Params.paused; }, {
+    new Button(ctx, () => { Params.paused = !Params.paused; }, {
       ...buttonPreset(),
       label: '▶',
       selected: true,
@@ -85,7 +85,7 @@ export default function initMachine(p5, {
 
   // Record
   Clickables.buttons.push(
-    new Button(p5, () => { Params.recording = !Params.recording; }, {
+    new Button(ctx, () => { Params.recording = !Params.recording; }, {
       ...buttonPreset(),
       label: '●',
       bgOff: [255, 130, 130],
@@ -94,7 +94,7 @@ export default function initMachine(p5, {
   );
   // Clear part
   Clickables.buttons.push(
-    new Button(p5, () => {
+    new Button(ctx, () => {
       Clickables.samples[Params.focused].pattern.fill(false);
       focusSample(Params.focused);
     }, {
@@ -106,7 +106,7 @@ export default function initMachine(p5, {
   );
   // Clear pattern
   Clickables.buttons.push(
-    new Button(p5, () => {
+    new Button(ctx, () => {
       // TODO: Replace with custom dialog
       if (window.confirm('Are you sure you would like to clear the current pattern? This action cannot be undone')) {
         Clickables.samples.forEach((e) => { e.pattern.fill(false); });
@@ -123,7 +123,7 @@ export default function initMachine(p5, {
   /* Encoders */
 
   // BPM
-  const bpmEncoder = new Encoder(p5, null, {
+  const bpmEncoder = new Encoder(ctx, null, {
     label: Params.bpm.tic,
     x: DIM.x - 50,
     y: 50,
@@ -141,7 +141,7 @@ export default function initMachine(p5, {
 
   // Encoder style preset
   function encoderPreset(r = Clickables.encoders[1].r,
-    start = [DIM.x / 3.25, DIM.y * 0.3]) {
+    start = [DIM.x / 3, DIM.y * 0.3]) {
     return {
       x: start[0] + (r + 50) * Clickables.encoders.length,
       y: start[1],
@@ -150,7 +150,7 @@ export default function initMachine(p5, {
   }
   // Amplification
   Clickables.encoders.push(
-    new Encoder(p5, (val) => {
+    new Encoder(ctx, (val) => {
       Clickables.samples[Params.focused].sample.amp = val;
       console.log(`Amplitude on Sample ${Params.focused}: ${val}`);
     }, {
@@ -163,7 +163,7 @@ export default function initMachine(p5, {
   );
   // Frequency
   Clickables.encoders.push(
-    new Encoder(p5, (val) => {
+    new Encoder(ctx, (val) => {
       Clickables.samples[Params.focused].sample.freq = val;
       console.log(`Frequency on Sample ${Params.focused}: ${val}Hz`);
     }, {
@@ -176,7 +176,7 @@ export default function initMachine(p5, {
   );
   // Attack
   Clickables.encoders.push(
-    new Encoder(p5, (val) => {
+    new Encoder(ctx, (val) => {
       Clickables.samples[Params.focused].sample.attack = val;
       console.log(`Attack on Sample ${Params.focused}: ${val * 1000}ms`);
     }, {
@@ -189,7 +189,7 @@ export default function initMachine(p5, {
   );
   // Decay
   Clickables.encoders.push(
-    new Encoder(p5, (val) => {
+    new Encoder(ctx, (val) => {
       Clickables.samples[Params.focused].sample.decay = val;
       console.log(`Decay on Sample ${Params.focused}: ${val * 1000}ms`);
     }, {
@@ -202,7 +202,7 @@ export default function initMachine(p5, {
   );
   // Sustain
   Clickables.encoders.push(
-    new Encoder(p5, (val) => {
+    new Encoder(ctx, (val) => {
       Clickables.samples[Params.focused].sample.sustain = val;
       console.log(`Sustain on Sample ${Params.focused}: ${val * 1000}ms`);
     }, {
@@ -215,7 +215,7 @@ export default function initMachine(p5, {
   );
   // Release
   Clickables.encoders.push(
-    new Encoder(p5, (val) => {
+    new Encoder(ctx, (val) => {
       Clickables.samples[Params.focused].sample.release = val;
       console.log(`Release on Sample ${Params.focused}: ${val * 1000}ms`);
     }, {

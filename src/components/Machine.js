@@ -1,12 +1,16 @@
 /* eslint-disable no-shadow */
-import React, { useEffect } from 'react';
-import p5 from 'p5';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import initMachine from './initMachine';
 import Button from './Button';
 
 export default function Machine() {
-  const DIM = { x: window.innerWidth, y: window.innerHeight };
+
+  const canvasRef = useRef(null)
+  const context = useRef()
+  
+
+  const [DIM, setDIM] = useState({ x: window.innerWidth, y: window.innerHeight });
   const FPS = 60;
   const SAMPLES = 16;
   const Params = {
@@ -32,14 +36,16 @@ export default function Machine() {
 
   const Assets = {
     metronome: {
-      url: 'img/metronome.png',
+      url: '/pksequencer/img/metronome.png',
     },
   };
 
-  window.addEventListener('resize', () => {
-    DIM.x = window.innerWidth;
-    DIM.y = window.innerHeight;
-  });
+  const resizeHandler = useCallback(() => {
+    if(canvasRef.current) {
+      setDIM({x: canvasRef.current.width, y: canvasRef.current.height})
+    }
+  }, [setDIM])
+ 
 
   const qwerty = 'qwertyuiopasdfghjklzxcvbnm'.substring(0, SAMPLES);
 
@@ -64,26 +70,94 @@ export default function Machine() {
     });
   }
 
-  function canvas(p5) {
-    p5.background(255);
-    p5.fill(40, 40, 50);
-    p5.noStroke();
-    p5.rect(0, 0, DIM.x, DIM.y);
-    p5.strokeWeight(1);
-    p5.stroke(255);
-    p5.line(0, DIM.y * 0.2, DIM.x, DIM.y * 0.2);
-    p5.line(0, DIM.y * 0.7, DIM.x, DIM.y * 0.7);
-  }
+  const setupCanvas = useCallback((ctx) => {
+    // ctx.background(255);
+    ctx.fillStyle = "rgb(40 40 50)";
+    ctx.fillRect(0, 0, DIM.x, DIM.y);
 
+    ctx.beginPath();
+    ctx.moveTo(0, DIM.y * 0.2)
+    ctx.lineTo(DIM.x, DIM.y * 0.2)
+    ctx.strokeStyle = "white"
+    ctx.stroke()
 
-  function sketch(p5) {
-    p5.preload = () => {
+    ctx.beginPath();
+    ctx.moveTo(0, DIM.y * 0.7)
+    ctx.lineTo(DIM.x, DIM.y *  0.7)
+    ctx.stroke()
+    
+
+    // ctx.line(0, DIM.y * 0.2, DIM.x, DIM.y * 0.2);
+    // ctx.line(0, DIM.y * 0.7, DIM.x, DIM.y * 0.7);
+  }, [DIM])
+
+  const draw = useCallback((ctx) => {
+    if (!Params.paused
+      && Math.floor(ctx.frameCount % (FPS / (1 / 60) / Params.bpm.tic / 4)) === 0) {
+      Clickables.samples.forEach((e) => {
+        e.on = false;
+      });
+      Params.step = (Params.step + 1) % SAMPLES;
+      if (Params.step % 4 === 0 && Params.metronome) {
+        Assets.metronome.sound.start();
+      }
+    }
+    // Clickables.samples.forEach((e, i) => {
+    //   e.render(i === Params.step, Params.step);
+    // });
+
+    // Make metronome button light up to the beat (play / pause)
+    Clickables.buttons.forEach((e, i) => {
+      e.render(i === Assets.metronome.btn && Params.step % 4 === 0);
+    });
+
+    Clickables.encoders.forEach((e) => {
+      e.render();
+    });
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+
+    context.current = ctx
+
+    Clickables.buttons.push(
+      new Button(ctx, () => {
+        Clickables.buttons.pop();
+        initMachine(ctx, {
+          Clickables, Assets, Params, focusSample, DIM, SAMPLES,
+        });
+      }, {
+        x: DIM.x / 2.5,
+        y: DIM.y / 2.5,
+        wF: 5,
+        hF: 5,
+        label: 'START',
+        inst: true,
+        bgOn: [0, 255, 100],
+      }),
+    );
+    setupCanvas(context.current)
+    draw(context.current)
+  }, [setupCanvas, draw])
+
+  useEffect(() => {
+    resizeHandler();
+    window.addEventListener('resize', resizeHandler);
+    return () => {
+      window.removeEventListener('resize', resizeHandler)
+    }
+  }, [resizeHandler])
+
+  function sketch(ctx) {
+    ctx.preload = () => {
       // Preload image Assets
       Object.keys(Assets).forEach((key) => {
-        Assets[key].img = p5.loadImage(Assets[key].url);
+        Assets[key].img = ctx.loadImage(Assets[key].url);
       });
     };
-    p5.mousePressed = () => {
+    ctx.mousePressed = () => {
       Object.keys(Clickables).forEach((key) => {
         Clickables[key].forEach((e, i) => {
           if (key === 'samples') {
@@ -96,7 +170,7 @@ export default function Machine() {
         });
       });
     };
-    p5.mouseDragged = (event) => {
+    ctx.mouseDragged = (event) => {
       Clickables.encoders.forEach((e) => {
         e.adjust(-event.movementY * e.max * 0.01);
       });
@@ -104,14 +178,14 @@ export default function Machine() {
         Clickables.samples[Params.focused].pattern[i] = e.drag();
       });
     };
-    p5.mouseWheel = (event) => {
+    ctx.mouseWheel = (event) => {
       Clickables.encoders.forEach((e) => {
         e.select();
         e.adjust(event.delta * e.max * 0.01);
         e.reset();
       });
     };
-    p5.mouseReleased = () => {
+    ctx.mouseReleased = () => {
       Clickables.encoders.forEach((e) => {
         e.reset();
       });
@@ -128,18 +202,18 @@ export default function Machine() {
         e.isClicked = false;
       });
     };
-    p5.keyPressed = () => {
-      if (p5.keyCode === 32) {
+    ctx.keyPressed = () => {
+      if (ctx.keyCode === 32) {
         Params.paused = !Params.paused;
-      } else if (p5.keyCode === p5.LEFT_ARROW) {
+      } else if (ctx.keyCode === ctx.LEFT_ARROW) {
         focusSample(Params.focused > 0 ? Params.focused - 1 : SAMPLES - 1);
-      } else if (p5.keyCode === p5.RIGHT_ARROW) {
+      } else if (ctx.keyCode === ctx.RIGHT_ARROW) {
         focusSample(Params.focused < SAMPLES - 1 ? Params.focused + 1 : 0);
       } else {
         [...qwerty].forEach((ch, i) => {
-          if (String.fromCharCode(p5.keyCode) === ch.toUpperCase()) {
+          if (String.fromCharCode(ctx.keyCode) === ch.toUpperCase()) {
             // Shortcut to select sample with SHIFT +
-            if (p5.keyIsDown(16)) {
+            if (ctx.keyIsDown(16)) {
               focusSample(i);
             } else {
               Clickables.samples[i].sample.start();
@@ -155,13 +229,13 @@ export default function Machine() {
         });
       }
     };
-    p5.setup = () => {
-      p5.frameRate(FPS);
-      p5.createCanvas(window.innerWidth, window.innerHeight);
+    ctx.setup = () => {
+      ctx.frameRate(FPS);
+      ctx.createCanvas(window.innerWidth, window.innerHeight);
       Clickables.buttons.push(
-        new Button(p5, () => {
+        new Button(ctx, () => {
           Clickables.buttons.pop();
-          initMachine(p5, {
+          initMachine(ctx, {
             Clickables, Assets, Params, focusSample, DIM, SAMPLES,
           });
         }, {
@@ -175,42 +249,12 @@ export default function Machine() {
         }),
       );
     };
-    p5.draw = () => {
-      canvas(p5);
-
-      if (!Params.paused
-        && Math.floor(p5.frameCount % (FPS / (1 / 60) / Params.bpm.tic / 4)) === 0) {
-        Clickables.samples.forEach((e) => {
-          e.on = false;
-        });
-        Params.step = (Params.step + 1) % SAMPLES;
-        if (Params.step % 4 === 0 && Params.metronome) {
-          Assets.metronome.sound.start();
-        }
-      }
-
-      Clickables.samples.forEach((e, i) => {
-        e.render(i === Params.step, Params.step);
-      });
-
-      // Make metronome button light up to the beat (play / pause)
-      Clickables.buttons.forEach((e, i) => {
-        e.render(i === Assets.metronome.btn && Params.step % 4 === 0);
-      });
-
-      Clickables.encoders.forEach((e) => {
-        e.render();
-      });
-    };
   }
 
-  useEffect(() => {
-    // eslint-disable-next-line new-cap, no-new
-    new p5(sketch);
-  });
 
   return (
     <div className="Machine">
+      <canvas ref={canvasRef} width="2560" height="1440" style={{width:"100%", objectFit: "contain"}}/>
       <noscript>Please enable JavaScript to use this application</noscript>
     </div>
   );

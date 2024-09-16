@@ -1,4 +1,4 @@
-export default function Sample(p5, {
+export default function Sample(ctx, {
   sample, x, y, w, h, bgOn = [199, 185, 110], focused, seqLen,
 }) {
   const bgOff = [149, 134, 58];
@@ -15,25 +15,25 @@ export default function Sample(p5, {
     pattern: Array(seqLen).fill(false),
     temp: false,
     render(step, i) {
-      p5.noStroke();
+      ctx.noStroke();
       if (step) {
-        p5.fill(...this.selected ? bgSelectedOn : bgOn);
+        ctx.fill(...this.selected ? bgSelectedOn : bgOn);
       } else {
-        p5.fill(...this.selected ? bgSelectedOff : bgOff);
+        ctx.fill(...this.selected ? bgSelectedOff : bgOff);
       }
-      p5.rect(x, y, w, h);
+      ctx.rect(x, y, w, h);
       if (this.pattern[i] && !this.on) {
         this.sample.start();
         this.on = true;
       }
 
       if (this.focused) {
-        p5.fill(100);
-        p5.circle(x + w / 2, y + h + 15, 10, 10);
+        ctx.fill(100);
+        ctx.circle(x + w / 2, y + h + 15, 10, 10);
       }
     },
     select() {
-      if (p5.mouseX >= x && p5.mouseX <= x + w && p5.mouseY >= y && p5.mouseY <= y + h) {
+      if (ctx.mouseX >= x && ctx.mouseX <= x + w && ctx.mouseY >= y && ctx.mouseY <= y + h) {
         this.selected = !this.selected;
         return true;
       }
@@ -41,7 +41,7 @@ export default function Sample(p5, {
     },
     drag() {
       if (!this.isClicked) {
-        if (p5.mouseX >= x && p5.mouseX <= x + w && p5.mouseY >= y && p5.mouseY <= y + h) {
+        if (ctx.mouseX >= x && ctx.mouseX <= x + w && ctx.mouseY >= y && ctx.mouseY <= y + h) {
           // this.selected = !this.selected;
           this.isDragged = true;
         } else if (this.isDragged) {
